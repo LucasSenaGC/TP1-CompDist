@@ -92,6 +92,20 @@ def run_client_server(servicer, port):
     server.wait_for_termination()
 
 
+# Função para exibir status em tempo real
+def display_status(client_id, shared_state, interval=10):
+    """Exibe o status do cliente periodicamente"""
+    while True:
+        time.sleep(interval)
+        with shared_state["state_cv"]:
+            print(f"\n{'='*60}")
+            print(f"[STATUS - Cliente {client_id}]")
+            print(f"  Estado Atual: {shared_state['state']}")
+            print(f"  Relógio de Lamport: {shared_state['clock']}")
+            print(f"  Timestamp da Requisição: {shared_state['request_ts']}")
+            print(f"{'='*60}\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Cliente de Impressão Distribuída")
     parser.add_argument("--id", type=int, required=True, help="ID único do cliente")
@@ -114,7 +128,6 @@ def main():
         "clock": 0,
         "state": "RELEASED", # Estados possiveis: RELEASED, WANTED, HELD
         "request_ts": 0,
-        "deferred_queue": [],
         "state_cv": state_cv
     }
     
@@ -129,6 +142,14 @@ def main():
         daemon=True
     )
     server_thread.start()
+    
+    # Iniciar thread para exibir status periodicamente
+    status_thread = threading.Thread(
+        target=display_status,
+        args=(client_id, shared_state, 15),  # Exibe status a cada 15 segundos
+        daemon=True
+    )
+    status_thread.start()
     
     # Conexão com o servidor de impressão
     printer_channel = grpc.insecure_channel(printer_server_address)
@@ -170,6 +191,7 @@ def main():
             
             # Pedir permissão pra todo mundo        
             replies_ok = 0
+            total_clients = len(client_stubs)
             for addr, stub in client_stubs.items():
                 try:
                     print(f"[Cliente {client_id}] Pedindo acesso para {addr}...")
@@ -189,10 +211,17 @@ def main():
                         # Regra 3 -> Ao receber uma mensagem (m, t), o processo Pj calcula Cj := max(Cj, t) + 1 e então entrega a mensagem à aplicação.
                         shared_state["clock"] = max(shared_state["clock"], response.lamport_timestamp) + 1
                         replies_ok += 1
-                        print(f"[Cliente {client_id}] Recebeu OK de {addr} ({replies_ok}/{len(client_stubs)}). (Meu Relógio: {shared_state['clock']})")
+                        print(f"[Cliente {client_id}] Recebeu OK de {addr} ({replies_ok}/{total_clients}). (Meu Relógio: {shared_state['clock']})")
                         
                 except grpc.RpcError as e:
-                    print(f"[Cliente {client_id}] Erro ao contatar cliente {addr}: {e.details()}")
+                    print(f"[Cliente {client_id}] ERRO ao contatar cliente {addr}: {e.details()}")
+                    print(f"[Cliente {client_id}] AVISO: Continuando sem permissão de {addr}")
+            
+            # Verificar se recebeu todas as permissões necessárias
+            if replies_ok < total_clients:
+                print(f"[Cliente {client_id}] AVISO: Recebeu apenas {replies_ok}/{total_clients} permissões. Alguns clientes podem estar offline.")
+            else:
+                print(f"[Cliente {client_id}] ✓ Recebeu TODAS as {total_clients} permissões!")
 
             # agora eh HELD e posso imprimir
             with cv:
@@ -222,8 +251,25 @@ def main():
             # Vira release e tenho que avisar
             with cv:
                 shared_state["state"] = "RELEASED"
+                shared_state["clock"] += 1
+                release_ts = shared_state["clock"]
                 cv.notify_all() 
-                print(f"[Cliente {client_id}] *** Estado -> RELEASED. Notificando todos. ***")
+                print(f"[Cliente {client_id}] *** Estado -> RELEASED. Notificando todos localmente. ***")
+            
+            # Enviar ReleaseAccess para todos os outros clientes
+            for addr, stub in client_stubs.items():
+                try:
+                    print(f"[Cliente {client_id}] Enviando ReleaseAccess para {addr}...")
+                    release_msg = print_pb2.AccessRelease(
+                        client_id=client_id,
+                        lamport_timestamp=release_ts,
+                        request_number=request_num
+                    )
+                    stub.ReleaseAccess(release_msg)
+                except grpc.RpcError as e:
+                    print(f"[Cliente {client_id}] Erro ao enviar ReleaseAccess para {addr}: {e.details()}")
+            
+            print(f"[Cliente {client_id}] *** ReleaseAccess enviado para todos os clientes. ***")
             
             # --- FIM DA SEÇÃO CRÍTICA ---
             
