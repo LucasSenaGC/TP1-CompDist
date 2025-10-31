@@ -36,6 +36,7 @@ Para executar o sistema, você precisará de **4 terminais** abertos no diretór
 ```bash
 source venv/bin/activate
 Depois, execute os seguintes comandos, um em cada terminal:
+```
 
 Terminal 1: Servidor "Burro"
 ```Bash
