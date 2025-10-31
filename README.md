@@ -32,7 +32,7 @@
 
 Para executar o sistema, você precisará de **4 terminais** abertos no diretório do projeto.
 
-**Importante:** Em *cada um* dos 4 terminais, primeiro ative o ambiente virtual:
+**Importante:** Em *cada um* dos 4 terminais ative o ambiente virtual:
 ```bash
 source venv/bin/activate
 Depois, execute os seguintes comandos, um em cada terminal:
@@ -64,19 +64,18 @@ Bash
 python3 printing_client.py --id 3 --server localhost:50051 --port 50054 --clients localhost:50052,localhost:50053
 
 Obs importante: Se o seu sistema usa python em vez de python3, substitua o comando em todas as linhas.
+```
 
-
-Execução com Scripts (Alternativa)
+## Execução com Scripts
 
 Tornar o script executável:
 
-Bash
-
+```Bash
 chmod +x setup.sh
-
+```
 Executar o script:
 
-Bash
-
+```Bash
 ./setup.sh
+```
 Após a conclusão, siga as instruções do script para abrir os 4 terminais e usar os scripts gerados (ex: ./iniciar_servidor.sh, ./iniciar_cliente1.sh, etc.).
