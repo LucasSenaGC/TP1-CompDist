@@ -38,33 +38,35 @@ source venv/bin/activate
 Depois, execute os seguintes comandos, um em cada terminal:
 
 Terminal 1: Servidor "Burro"
-Bash
+```Bash
 
 python3 printer_server.py
+```
 
 Terminal 2: Cliente 1
 (Ouve na 50052, conecta na 50053 e 50054)
 
-Bash
+```Bash
 
 python3 printing_client.py --id 1 --server localhost:50051 --port 50052 --clients localhost:50053,localhost:50054
+```
 
 Terminal 3: Cliente 2
 (Ouve na 50053, conecta na 50052 e 50054)
 
-Bash
+```Bash
 
 python3 printing_client.py --id 2 --server localhost:50051 --port 50053 --clients localhost:50052,localhost:50054
-
+```
 Terminal 4: Cliente 3
 (Ouve na 50054, conecta na 50052 e 50053)
 
-Bash
+```Bash
 
 python3 printing_client.py --id 3 --server localhost:50051 --port 50054 --clients localhost:50052,localhost:50053
-
-Obs importante: Se o seu sistema usa python em vez de python3, substitua o comando em todas as linhas.
 ```
+Obs importante: Se o seu sistema usa python em vez de python3, substitua o comando em todas as linhas.
+
 
 ## Execução com Scripts
 
