@@ -35,8 +35,9 @@ Para executar o sistema, você precisará de **4 terminais** abertos no diretór
 **Importante:** Em *cada um* dos 4 terminais ative o ambiente virtual:
 ```bash
 source venv/bin/activate
-Depois, execute os seguintes comandos, um em cada terminal:
 ```
+Depois, execute os seguintes comandos, um em cada terminal:
+
 
 Terminal 1: Servidor "Burro"
 ```Bash
